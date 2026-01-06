@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Harga Toko</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .list-item:active { background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg">
+        <div class="bg-blue-600 p-4 sticky top-0 shadow-md">
+            <h1 class="text-white text-xl font-bold mb-2">Katalog Harga</h1>
+            <input type="text" id="searchInput" placeholder="Cari nama barang..." 
+                class="w-full p-3 rounded-lg border-none focus:ring-2 focus:ring-blue-400 outline-none">
+        </div>
+
+        <div id="status" class="p-4 text-center text-gray-500 text-sm">Memuat data...</div>
+
+        <div id="itemList" class="divide-y divide-gray-200">
+            </div>
+
+        <button onclick="fetchData()" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 transition">
+            🔄
+        </button>
+    </div>
+
+    <script>
+        const API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLjxWncjvULZ06c7Ef9LN5ltwCeGIALkO6zS9Bn0jaRwq-bJO7kq5542q-uFo3h4qenRuAiyQs2mYcg8eiTnSDYOJ0QlOPF3L9z_QugV8uwVEYv1O6sGZY6fIP8fz8ai9L5jwXvnUoZFiErALzDk1nkwgSL_MPDjm8bWbAHLYZIIwCTSC4FK4OhozveKQahgq5JlIfvmLNHk5-695bVokJ-EMF39sUqj2gorJuVCy_TnU7l4GYld74Q2d39jYzhFULU6oAx5_lxJEbXaA_X1GbPv1yDs7Hsil2hfWE7S&lib=MuXf89eYZA9cfyrtMexgGwUPwxCMwnPXt";
+        let items = [];
+
+        async function fetchData() {
+            const status = document.getElementById('status');
+            status.innerText = "Memperbarui data...";
+            try {
+                const response = await fetch(API_URL);
+                items = await response.json();
+                localStorage.setItem('cachedItems', JSON.stringify(items));
+                displayItems(items);
+                status.innerText = `Terakhir update: ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                status.innerText = "Gagal memuat data terbaru. Menggunakan data lama.";
+                const cached = localStorage.getItem('cachedItems');
+                if (cached) {
+                    items = JSON.parse(cached);
+                    displayItems(items);
+                }
+            }
+        }
+
+        function displayItems(data) {
+            const list = document.getElementById('itemList');
+            list.innerHTML = data.map(item => `
+                <div class="p-4 flex justify-between items-center list-item">
+                    <div>
+                        <div class="font-medium text-gray-800 text-lg">${item.nama}</div>
+                        <div class="text-sm text-gray-500">${item.kategori || ''}</div>
+                    </div>
+                    <div class="text-blue-600 font-bold text-xl">
+                        Rp ${Number(item.harga).toLocaleString('id-ID')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = items.filter(item => item.nama.toLowerCase().includes(keyword));
+            displayItems(filtered);
+        });
+
+        // Load awal
+        const cached = localStorage.getItem('cachedItems');
+        if (cached) {
+            items = JSON.parse(cached);
+            displayItems(items);
+            document.getElementById('status').innerText = "Mode Offline (Tekan 🔄 untuk update)";
+        } else {
+            fetchData();
+        }
+    </script>
+</body>
+</html>
